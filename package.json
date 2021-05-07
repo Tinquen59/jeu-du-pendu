@@ -1,0 +1,24 @@
+{
+  "name": "jeu-du-pendu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon app",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tinquen59/jeu-du-pendu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tinquen59/jeu-du-pendu/issues"
+  },
+  "homepage": "https://github.com/Tinquen59/jeu-du-pendu#readme",
+  "dependencies": {
+    "mongodb": "^3.6.6"
+  }
+}
