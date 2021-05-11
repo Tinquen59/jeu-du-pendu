@@ -6,12 +6,13 @@ process.stdin.setEncoding("utf8");
 
 const dataMockWords = []
 let [ 
+    status,
     flag,
     isStart,
     dataMockWordsTampon,
     randomIndex,
     maxCounter
-] = [ true, false, null, null, 7 ];
+] = [ "", true, false, null, null, 7 ];
 let counter;
 let hideWord;
 
@@ -29,33 +30,44 @@ const comparedLetter = (str, objectWord) => {
                 hideWord = hideWordTampon.join("");
             }
         }
-
-        checkIsWin(objectWord.word)
     } else if (str.length > 1) {
-        if (str === objectWord.word) 
-            hideWord = str
-
-        console.log("hideword ", hideWord);
-        console.log("oject word : ", objectWord.word);
-        checkIsWin(objectWord.word)
+        if (str === objectWord.word) hideWord = str;
+            
     } else {
-        console.log("***Aucune lettre trouvée***");
+            console.log("\n\n***Aucune lettre trouvée***");
     }
+    checkIsWin(objectWord.word);
 }
 
 const checkIsWin = (word) => {
+    console.log("check hide word :", hideWord);
+    console.log("check word ", word);
     if (hideWord === word) {
-        console.log("WINNER !!!");
         status = "Winner";
-        process.stdin.pause();
     } else {
         counter++;
     }
 }
 
+const endOfGame = async() => {
+    console.log("\n----------------");
+    console.log(`status: ${status}`);
+    console.log("Press \"q\" for leave or enter your peusdo for restart")
+    process.stdout.write("> ");
+}
+
 const movesRemaining = () => {
     return (maxCounter - counter) + 1
 }
+
+const changeHideWord = () => {
+    console.log(dataMockWords.length);
+    dataMockWords.splice(randomIndex, 1);
+    console.log(dataMockWords.length);
+
+    randomIndex = randomNumber();
+}
+
 
 const game = async() => {
     try {
@@ -64,13 +76,26 @@ const game = async() => {
         const database = client.db("tp-pendu");
         const mockWords = database.collection("mockWords");
 
-        let [ status, player ] = [ "Progress", null ];
+        let player = "";
+        status = "Progress";
         hideWord = "";
         counter = 1;
-
+        isStart = false;
+        
         process.stdin.on("data", async (data) => {
             try {
                 const input = data.toString().trim();
+
+                if (status === "Winner" || status === "Loser") {
+                    changeHideWord();
+
+                    status = "Progress";
+                    hideWord = dataMockWords[randomIndex].hide
+                    counter = 1;
+                    isStart = false;
+
+                    if (dataMockWords.length === 0) flag = true;
+                }
 
                 if (!isStart) {
                     if (input.toUpperCase() === "Q") {
@@ -95,20 +120,24 @@ const game = async() => {
                         
                     console.log(`\n[-----${movesRemaining()}-----]`);
                     console.log("hide word : ", hideWord);
+                    console.log(`status: ${status}`);
                     process.stdout.write("> ");
                 } else {
                     if (counter < maxCounter) {
                         comparedLetter(input, dataMockWords[randomIndex]);
 
-                        console.log(`\n[-----${movesRemaining()}-----]`);
-                        console.log("hide word : ", hideWord);
-                        console.log(`status: ${status}`);
-                        process.stdout.write("> ");
+                        if (status === "Winner")
+                            endOfGame();
+
+                        if (status === "Progress") {
+                            console.log(`\n[-----${movesRemaining()}-----]`);
+                            console.log("hide word : ", hideWord);
+                            console.log(`status: ${status}`);
+                            process.stdout.write("> ");
+                        }
                     } else {
                         status = "Loser";
-                        console.log("\n----------------");
-                        console.log(`status: ${status}`);
-                        process.stdin.pause();
+                        endOfGame();
                     }
                 }
             } catch(e) {
@@ -131,7 +160,7 @@ console.log("------------  Jeu du pendu  ------------");
 console.log("----------------------------------------");
 console.log("----------------------------------------\n");
 
-console.log("Press \"q\" for leave or enter your peusdo");
+console.log("Press \"q\" for leave or enter your peusdo for play");
 process.stdout.write("> ");
 
 game().catch(console.dir);
