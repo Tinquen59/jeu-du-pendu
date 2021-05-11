@@ -11,8 +11,9 @@ let [
     isStart,
     dataMockWordsTampon,
     randomIndex,
-    maxCounter
-] = [ "", true, false, null, null, 7 ];
+    maxCounter,
+    player
+] = [ "", true, false, null, null, 7, "" ];
 let counter;
 let hideWord;
 
@@ -40,8 +41,6 @@ const comparedLetter = (str, objectWord) => {
 }
 
 const checkIsWin = (word) => {
-    console.log("check hide word :", hideWord);
-    console.log("check word ", word);
     if (hideWord === word) {
         status = "Winner";
     } else {
@@ -60,10 +59,8 @@ const movesRemaining = () => {
     return (maxCounter - counter) + 1
 }
 
-const changeHideWord = () => {
-    console.log(dataMockWords.length);
+const changeHideWord = async() => {
     dataMockWords.splice(randomIndex, 1);
-    console.log(dataMockWords.length);
 
     randomIndex = randomNumber();
 }
@@ -75,8 +72,8 @@ const game = async() => {
 
         const database = client.db("tp-pendu");
         const mockWords = database.collection("mockWords");
+        const resultScore = database.collection("score");
 
-        let player = "";
         status = "Progress";
         hideWord = "";
         counter = 1;
@@ -87,6 +84,16 @@ const game = async() => {
                 const input = data.toString().trim();
 
                 if (status === "Winner" || status === "Loser") {
+                    let docScore = {
+                        name: player,
+                        word: dataMockWords[randomIndex].word,
+                        beginHide: dataMockWords[randomIndex].hide,
+                        endHide: hideWord,
+                        status: status,
+                        counter: counter
+                    }
+                    await resultScore.insertOne(docScore);
+
                     changeHideWord();
 
                     status = "Progress";

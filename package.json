@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Tinquen59/jeu-du-pendu#readme",
   "dependencies": {
-    "mongodb": "^3.6.6"
+    "mongodb": "^3.6.6",
+    "nodemon": "^2.0.7"
   }
 }
