@@ -12,17 +12,19 @@ let [
     dataMockWordsTampon,
     randomIndex,
     maxCounter,
-    player
-] = [ "", true, false, null, null, 7, "" ];
+    player,
+    letterUsed
+] = [ "", true, false, null, null, 7, "", [] ];
 let counter;
 let hideWord;
 
-const randomNumber = () => {
-    return Math.floor(Math.random() * dataMockWords.length);
-}
+/**
+ * 
+ * @returns un nombre aléatoire par rapport à la longueur de dataMockWords
+ */
+const randomNumber = () => Math.floor(Math.random() * dataMockWords.length)
 
 const comparedLetter = (str, objectWord) => {
-
     if (str.length === 1) {
         for (let i = 0; i < objectWord.word.length; i++) {
             if(str === objectWord.word[i]) {
@@ -33,21 +35,24 @@ const comparedLetter = (str, objectWord) => {
         }
     } else if (str.length > 1) {
         if (str === objectWord.word) hideWord = str;
-            
     } else {
-            console.log("\n\n***Aucune lettre trouvée***");
+        return console.log("\n\n***Aucune lettre trouvée***");
     }
+    letterUsed.push(str);
     checkIsWin(objectWord.word);
 }
 
-const checkIsWin = (word) => {
-    if (hideWord === word) {
-        status = "Winner";
-    } else {
-        counter++;
-    }
+/**
+ * vérifie si le mot caché est identique au mot
+ * @param {*} word est le mot complet
+ */
+const checkIsWin = word => {
+    hideWord === word ? status = "Winner" : counter++
 }
 
+/**
+ * affiche les consoles.log() en fin de partie
+ */
 const endOfGame = async() => {
     console.log("\n----------------");
     console.log(`status: ${status}`);
@@ -55,14 +60,29 @@ const endOfGame = async() => {
     process.stdout.write("> ");
 }
 
-const movesRemaining = () => {
-    return (maxCounter - counter) + 1
-}
+/**
+ * 
+ * @returns le nombre de coups restants
+ */
+const movesRemaining = () => (maxCounter - counter) + 1
 
+/**
+ * supprime le mot caché de la variable et change d'index
+ */
 const changeHideWord = async() => {
     dataMockWords.splice(randomIndex, 1);
 
     randomIndex = randomNumber();
+}
+
+/**
+ * affiche les console.log() pendant la partie
+ */
+const inProgesse = () => {
+    console.log(`\n[-----${movesRemaining()}-----]`);
+    console.log("hide word : ", hideWord);
+    console.log(`status: ${status}`);
+    process.stdout.write("> ");
 }
 
 
@@ -83,14 +103,17 @@ const game = async() => {
             try {
                 const input = data.toString().trim();
 
+                // remet tout à zéro, change de mot caché et ajoute le score dans la bdd à la fin de la partie
                 if (status === "Winner" || status === "Loser") {
                     let docScore = {
                         name: player,
                         word: dataMockWords[randomIndex].word,
                         beginHide: dataMockWords[randomIndex].hide,
                         endHide: hideWord,
-                        status: status,
-                        counter: counter
+                        status,
+                        counter,
+                        date: new Date(),
+                        letterUsed
                     }
                     await resultScore.insertOne(docScore);
 
@@ -100,11 +123,13 @@ const game = async() => {
                     hideWord = dataMockWords[randomIndex].hide
                     counter = 1;
                     isStart = false;
+                    letterUsed = [];
 
                     if (dataMockWords.length === 0) flag = true;
                 }
 
                 if (!isStart) {
+                    // si "Q" on quitte sinon on stocke le nom du joueur et on lance la partie
                     if (input.toUpperCase() === "Q") {
                         throw new ExceptionConsole("By");
                     }
@@ -113,35 +138,28 @@ const game = async() => {
                         isStart = true;
                     }
                     
+                    // fait une requête vers la bdd pour récupérer les mots
                     if (flag) {
                         dataMockWordsTampon = await mockWords.find();
                         flag = false;
                     }
                     
+                    // créé un tableau avec les données de la requête précédente et créé le mot caché
                     if (dataMockWords.length === 0) {
                         await dataMockWordsTampon.forEach(doc => dataMockWords.push(doc) );
+
                         randomIndex = randomNumber();
                         hideWord = dataMockWords[randomIndex].hide
                     }
 
-                        
-                    console.log(`\n[-----${movesRemaining()}-----]`);
-                    console.log("hide word : ", hideWord);
-                    console.log(`status: ${status}`);
-                    process.stdout.write("> ");
+                    inProgesse();
                 } else {
                     if (counter < maxCounter) {
                         comparedLetter(input, dataMockWords[randomIndex]);
 
-                        if (status === "Winner")
-                            endOfGame();
+                        if (status === "Winner") endOfGame();
 
-                        if (status === "Progress") {
-                            console.log(`\n[-----${movesRemaining()}-----]`);
-                            console.log("hide word : ", hideWord);
-                            console.log(`status: ${status}`);
-                            process.stdout.write("> ");
-                        }
+                        if (status === "Progress") inProgesse();
                     } else {
                         status = "Loser";
                         endOfGame();
